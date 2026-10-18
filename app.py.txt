@@ -1,0 +1,122 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+
+# Configuración de la página
+st.set_page_config(
+    page_title="Simulador: Instituciones y Crecimiento Económico",
+    layout="wide"
+)
+
+st.title("📊 Simulador Interactivo: Instituciones, Inversión y Crecimiento")
+st.markdown("""
+Esta herramienta interactiva simula los hallazgos empíricos de **Miguel Ángel Galindo Martín** y los fundamentos del crecimiento económico. 
+Modifica los indicadores institucionales en la barra lateral para observar cómo reaccionan en tiempo real la inversión, el PIB y la actividad emprendedora (TEA).
+""")
+
+# --- BARRA LATERAL: CONTROLES INSTITUCIONALES ---
+st.sidebar.header("🎛️ Controles Institucionales")
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("1. Estado de Derecho (Rule of Law)")
+rule_of_law = st.sidebar.slider(
+    "Nivel (-2.5 a 2.5)", min_value=-2.5, max_value=2.5, value=0.0, step=0.1,
+    help="Escala del Banco Mundial. Valores negativos indican problemas graves de seguridad jurídica."
+)
+
+st.sidebar.subheader("2. Control de la Corrupción")
+control_corrupcion = st.sidebar.slider(
+    "Nivel (-4.0 a 16.0)", min_value=-4.0, max_value=16.0, value=2.0, step=0.5,
+    help="Mayor puntaje indica un control más efectivo de la corrupción."
+)
+
+st.sidebar.subheader("3. Derechos Políticos y Civiles (DP)")
+derechos_politicos = st.sidebar.slider(
+    "Nivel (1 a 7)", min_value=1, max_value=7, value=3, step=1,
+    help="Escala de Freedom House (1: Mayor libertad / menor interferencia gubernamental)."
+)
+
+# --- BOTONES DE ESCENARIOS PREDISEÑADOS ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📌 Escenarios de Referencia")
+escenario = st.sidebar.radio(
+    "Selecciona un escenario histórico:",
+    ["Personalizado", "América Latina (Promedio crítico)", "Milagros Asiáticos (Ej. Singapur)"]
+)
+
+if escenario == "América Latina (Promedio crítico)":
+    rule_of_law = -0.5
+    control_corrupcion = -0.2
+    derechos_politicos = 2
+elif escenario == "Milagros Asiáticos (Ej. Singapur)":
+    rule_of_law = 2.1
+    control_corrupcion = 12.0
+    derechos_politicos = 5
+
+# --- SIMULACIÓN MATEMÁTICA DE LOS DATOS (Lógica de las gráficas de Galindo Martín) ---
+np.random.seed(42)
+n_paises = 50
+
+# Generamos base de datos simulada sensible a las instituciones elegidas
+base_rule = np.random.normal(rule_of_law, 0.4, n_paises)
+base_corr = np.random.normal(control_corrupcion, 1.2, n_paises)
+base_dp = np.random.normal(derechos_politicos, 0.8, n_paises)
+
+# Relaciones directas basadas en los Gráficos 5, 6 y 7 del artículo
+pib_simulado = 2.5 + 1.2 * base_rule + 0.8 * base_dp + np.random.normal(0, 0.8, n_paises)
+inversion_simulada = 20 + 3.5 * base_corr + 2.0 * base_rule + np.random.normal(0, 5, n_paises)
+tea_simulado = 5 + 2.8 * base_dp + 1.5 * base_rule + np.random.normal(0, 3, n_paises)
+
+df = pd.DataFrame({
+    'Rule of Law': base_rule,
+    'Control Corrupción': base_corr,
+    'Derechos Políticos': base_dp,
+    'PIB (Crecimiento)': pib_simulado,
+    'Inversión (% del PIB)': inversion_simulada,
+    'Emprendimiento (TEA %)': tea_simulado
+})
+
+# --- VISUALIZACIÓN EN PESTAÑAS ---
+tab1, tab2, tab3 = st.tabs(["📈 PIB vs Derechos Políticos", "💰 Inversión vs Corrupción", "🚀 Emprendimiento y Entorno"])
+
+with tab1:
+    st.subheader("Relación entre Crecimiento del PIB y Derechos Políticos (Replicando Gráfico 5)")
+    st.markdown("Una mejor protección institucional y política reduce la incertidumbre y fomenta la confianza económica.")
+    fig1 = px.scatter(
+        df, x='Derechos Políticos', y='PIB (Crecimiento)', 
+        trendline="ols", color='Rule of Law',
+        labels={'Derechos Políticos': 'Derechos Políticos (Freedom House)', 'PIB (Crecimiento)': 'Crecimiento del PIB'},
+        color_continuous_scale='Viridis'
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+with tab2:
+    st.subheader("Relación entre Inversión Privada y Control de Corrupción (Replicando Gráfico 6)")
+    st.markdown("Menor corrupción reduce los costos de transacción adicionales para las empresas, estimulando la inversión.")
+    fig2 = px.scatter(
+        df, x='Control Corrupción', y='Inversión (% del PIB)', 
+        trendline="ols", color='Rule of Law',
+        labels={'Control Corrupción': 'Control de Corrupción', 'Inversión (% del PIB)': 'Inversión Privada (%)'},
+        color_continuous_scale='Plasma'
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+with tab3:
+    st.subheader("Actividad Emprendedora (TEA) y Derechos Políticos (Replicando Gráfico 7)")
+    st.markdown("Un entorno político sin interferencias gubernamentales excesivas incentiva al empresario-emprendedor (Schumpeter).")
+    fig3 = px.scatter(
+        df, x='Derechos Políticos', y='Emprendimiento (TEA %)', 
+        trendline="ols", color='Control Corrupción',
+        labels={'Derechos Políticos': 'Derechos Políticos', 'Emprendimiento (TEA %)': 'Tasa de Emprendimiento (TEA %)'},
+        color_continuous_scale='Cividis'
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+
+# --- CONCLUSIÓN AUTOMÁTICA EN VIVO ---
+st.markdown("---")
+st.subheader("💡 Diagnóstico del Escenario Actual en la Simulación:")
+if control_corrupcion < 0 or rule_of_law < 0:
+    st.warning("⚠️ **Alerta Institucional:** Los niveles actuales simulan restricciones o debilidades estructurales (como los casos de estudio de América Latina en el texto). Esto deprime la inversión privada y frena la convergencia económica a largo plazo.")
+else:
+    st.success("✅ **Entorno Favorable:** Los niveles institucionales simulan un clima de negocios sólido (estilo economías avanzadas o milagros asiáticos), potenciando la inversión, el interés compuesto y el crecimiento sostenido.")
