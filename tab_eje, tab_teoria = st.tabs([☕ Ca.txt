@@ -1,0 +1,41 @@
+tab_eje, tab_teoria = st.tabs(["☕ Caso Eje Cafetero (PTF y Apertura)", "📚 Marco Teórico y Autores"])
+
+with tab_eje:
+    st.subheader("Impacto Econométrico de la Apertura en la PTF (1985-2005)")
+    st.markdown("""
+    Basado en el modelo de industria cruzada de **Dani Rodrik** aplicado al Eje Cafetero. 
+    Muestra cómo el Índice de Transabilidad (proxy de apertura) afectó de manera desigual la Productividad Total de los Factores (PTF).
+    """)
+    
+    # Datos del estudio de la Universidad de Caldas
+    df_eje = pd.DataFrame({
+        'Departamento': ['Caldas', 'Quindío', 'Risaralda'],
+        'Impacto en la PTF (Coeficiente)': [-0.0888, -0.0787, 0.1370],
+        'Resultado': ['Desfavorable (Desindustrialización)', 'Desfavorable (Caída de PTF)', 'Favorable (Efecto Estimulo)']
+    })
+    
+    # Gráfica de Barras Divergentes
+    fig_eje = px.bar(
+        df_eje, 
+        x='Departamento', 
+        y='Impacto en la PTF (Coeficiente)',
+        color='Resultado',
+        color_discrete_map={
+            'Desfavorable (Desindustrialización)': '#EF553B',
+            'Desfavorable (Caída de PTF)': '#EF553B',
+            'Favorable (Efecto Estimulo)': '#00CC96'
+        },
+        text='Impacto en la PTF (Coeficiente)',
+        title="Efecto del Índice de Transabilidad sobre la PTF por Departamento"
+    )
+    
+    fig_eje.update_traces(texttemplate='%{text:.4f}', textposition='outside')
+    fig_eje.add_hline(y=0, line_dash="dash", line_color="black")
+    
+    st.plotly_chart(fig_eje, use_container_width=True)
+    
+    st.info("""
+    💡 **Interpretación para la Exposición:**
+    * **Caldas y Quindío:** Muestran coeficientes negativos. La apertura expuso a la industria regional a competencias externas sin la infraestructura ni el crédito necesario, destruyendo productividad.
+    * **Risaralda:** Muestra un coeficiente positivo ($+0,1370$). Logró una mejor adaptación institucional y reconversión productiva hacia exportaciones más competitivas.
+    """)
